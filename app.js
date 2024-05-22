@@ -19,6 +19,9 @@ app.use(bodyParser.json());
 
 // Bearer Token
 app.use((req, res, next) => {
+    //Avoid on options
+    if (req.method === 'OPTIONS') return next()
+
     let token = req.headers.authorization;
     if (token && token.startsWith('Bearer ')) {
         token = token.slice(7);
@@ -36,7 +39,6 @@ const corsOptions = {
     credentials: true,
     optionSuccessStatus: 200,
     methods: ['GET', 'POST', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'x-app-password']
 };
 app.options('*', cors(corsOptions));
 
