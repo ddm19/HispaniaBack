@@ -12,16 +12,27 @@ dotenv.config();
 const app = express();
 const port = 8080;
 
-// Configurar body-parser
 app.use(bodyParser.json());
 
-// Configurar CORS
-const corsOptions = {
-    origin: 'http://localhost:3000',
-    credentials: true,
-    optionSuccessStatus: 200
-};
-app.use(cors(corsOptions));
+
+
+// Bearer Token
+app.use((req, res, next) => {
+    let token = req.headers.authorization;
+    if (token && token.startsWith('Bearer ')) {
+        token = token.slice(7);
+    }
+    if (token !== process.env.BEARER_TOKEN) {
+        console.log('Unauthorized access with token:' + token);
+        return res.status(401).json({ error: 'Unauthorized' });
+    }
+    next();
+});
+
+
+
+app.use(cors());
+
 
 const s3Client = new S3Client({
     region: process.env.AWS_REGION,
