@@ -16,6 +16,7 @@ app.use(bodyParser.json());
 
 
 
+
 // Bearer Token
 app.use((req, res, next) => {
     let token = req.headers.authorization;
@@ -30,8 +31,12 @@ app.use((req, res, next) => {
 });
 
 
-
-app.use(cors());
+const corsOptions = {
+    origin: '*',
+    credentials: true,
+    optionSuccessStatus: 200
+};
+app.use(cors(corsOptions));
 
 
 const s3Client = new S3Client({
