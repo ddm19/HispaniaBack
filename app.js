@@ -34,8 +34,12 @@ app.use((req, res, next) => {
 const corsOptions = {
     origin: '*',
     credentials: true,
-    optionSuccessStatus: 200
+    optionSuccessStatus: 200,
+    methods: ['GET', 'POST', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'x-app-password']
 };
+app.options('*', cors(corsOptions));
+
 app.use(cors(corsOptions));
 
 
