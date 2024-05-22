@@ -1,0 +1,93 @@
+{
+    "title": "Investigación Kóbold",
+    "date": "15 abril de 2015",
+    "content": "{image1} En esta emocionante campaña de rol, los jugadores se embarcan en una misión para desentrañar los misterios que rodean a una tribu de kobolds que han estado causando estragos en las cercanías de un pequeño pueblo. El objetivo principal es descubrir las razones detrás de los ataques y encontrar una forma de detenerlos.\n Lorem ipsum dolor sit amet, consectetur adipiscing elit. Duis imperdiet sed arcu in auctor. Morbi rhoncus sapien ut scelerisque molestie. Nullam erat orci, cursus ut fermentum in, mattis sit amet sem. Vivamus ac lectus semper orci tempor tincidunt. Sed non neque felis. Pellentesque et venenatis purus. Fusce blandit ac purus vehicula tempus.",
+    "image": "https://i.etsystatic.com/39938216/r/il/430cba/4488972880/il_794xN.4488972880_3h3k.jpg",
+    "author": "Dani Domenech",
+    "timeToRead": "10 minutos",
+    "shortDescription": "Esta e suna descripción corta sobre el artículo",
+    "related": [
+        {
+            "image": "https://play-lh.googleusercontent.com/CWnUKImqAolAYXmKDix36PmRvFvS1ztKV10qW1x2NVOrChlhm8NYEkjnrbRQvalUXLXB",
+            "title": "Valar D. Heimdall",
+            "subtitle": "Personaje",
+            "link": "https://hispania.vercel.app"
+        },
+        {
+            "title": "Quelsor Binfel",
+            "subtitle": "Personaje",
+            "link": "https://hispania.vercel.app"
+        }
+    ],
+    "sections": [
+        {
+            "id": "1",
+            "title": "Personajes",
+            "content": "{ValarD} {Jhonny}",
+            "isNumbered": true
+        },
+        {
+            "id": "2",
+            "title": "Historia",
+            "subtitle": "Actualizado el 12/11/2023",
+            "content": "",
+            "isNumbered": true,
+            "subSections": [
+                {
+                    "id": "2.1",
+                    "title": "Encuentro en la taberna",
+                    "content": "Los jugadores reciben su misión inicial en la taberna del pueblo, donde el alcalde les explica la situación y los problemas recientes con los kobolds.",
+                    "isNumbered": true
+                },
+                {
+                    "id": "2.2",
+                    "title": "Exploración de los túneles",
+                    "content": "Los jugadores deben explorar una serie de túneles subterráneos, enfrentándose a trampas y emboscadas mientras intentan llegar al corazón del problema.",
+                    "isNumbered": true
+                }
+            ]
+        },
+        {
+            "id": "3",
+            "title": "Momentos Destacables",
+            "content": "Durante la campaña, los jugadores experimentarán varios momentos memorables, incluyendo la batalla épica contra el jefe kobold y la resolución del conflicto con la entidad que manipula a los kobolds.",
+            "isNumbered": true,
+            "subSections": [
+                {
+                    "id": "3.1",
+                    "title": "La batalla final",
+                    "content": "En el clímax de la campaña, los jugadores deben enfrentarse a un poderoso adversario que ha estado detrás de los ataques de los kobolds, en una batalla que determinará el destino de Greenhill.",
+                    "isNumbered": true
+                }
+            ]
+        },
+        {
+            "id": "NotasDelDM",
+            "title": "Notas del DM",
+            "content": "Asegúrate de mantener la tensión alta durante la exploración de los túneles, utilizando descripciones vívidas y sonidos inquietantes. Anima a los jugadores a pensar creativamente para superar las trampas y resolver los enigmas que encuentren.",
+            "isNumbered": false
+        }
+    ],
+    "imports": [
+        {
+            "id": "ValarD",
+            "link": "https://hispania.vercel.app",
+            "title": "Valar D. Heimdall",
+            "subtitle": "Marc",
+            "shortDesc": "Valar D. Heimdall es un guerrero intrépido conocido por su valentía y fuerza en combate. Acompaña a los jugadores en su misión, aportando su conocimiento y habilidades para ayudar a resolver el misterio de los kobolds.",
+            "image": "https://play-lh.googleusercontent.com/CWnUKImqAolAYXmKDix36PmRvFvS1ztKV10qW1x2NVOrChlhm8NYEkjnrbRQvalUXLXB"
+        },
+        {
+            "id": "Jhonny",
+            "link": "https://hispania.vercel.app",
+            "title": "Jhonny Piesligeros",
+            "subtitle": "NPC",
+            "shortDesc": "Jhonny Piesligeros es un astuto ladrón que se ha ganado la confianza del alcalde. Utiliza su conocimiento de los túneles subterráneos para guiar a los jugadores en su investigación.",
+            "image": "https://play-lh.googleusercontent.com/CWnUKImqAolAYXmKDix36PmRvFvS1ztKV10qW1x2NVOrChlhm8NYEkjnrbRQvalUXLXB"
+        },
+        {
+            "id": "image1",
+            "image": "https://media.istockphoto.com/id/1409329028/es/vector/no-hay-imagen-disponible-marcador-de-posici%C3%B3n-miniatura-icono-dise%C3%B1o-de-ilustraci%C3%B3n.jpg?s=612x612&w=0&k=20&c=Bd89b8CBr-IXx9mBbTidc-wu_gtIj8Py_EMr3hGGaPw="
+        }
+    ]
+}

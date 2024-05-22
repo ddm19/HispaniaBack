@@ -1,0 +1,126 @@
+{
+    "title": "Ella",
+    "date": "21 mayo de 2024",
+    "content": "Nuestro pintoresco grupo de aventureros porta semanas viajando en busca de aventuras y algo que echarse a la boca, apenas os quedan un par de raciones para pasar los días, y por si fuese poco hace un rato que cae una lluvia fina que los está empezando a empapar. Discutís sobre las decisiones de desvíos anteriores, si haber tomado caminos colindantes, o aceptado encargos mal pagados… En mitad de toda esta discusión uno de vosotros (Percepción) divisa a lo lejos una chimenea humeante, por lo que, con la esperanza de encontrar un cobijo, acudís en dicha dirección.\n A medida que os acercáis podéis ver un caserón con algo de luz y barullo dentro, cerca de la misma podéis ver también una alta torre que parece haberse construido recientemente con una única puerta de hierro en sus pies.\n La zona, aunque resulta encantadora incluso pese al mal tiempo, presenta una particularidad algo extraña y es que a cuando os acercáis en dirección a la casona observáis que los campos y cultivos de alrededor de algunas granjas son muy dispares entre ellas. Mientras algunas de las granjas son extremadamente fértiles, con hermosas cosechas y algunas vacas y ovejas gordas y sanas, otras granjas, en cambio, poseen campos pobres y descuidados, repletos de plantas raquíticas o enfermas.\n En estas la tierra parece incapaz de entregar ningún fruto que merezca la pena, incluso en algunas veis algunas vacas escuálidas y otros escasos animales prácticamente en los huesos.\n A un lado del camino veis un cartel con una jarra justo en la entrada de esta pequeña comunidad parece un lugar perfecto para descansar.",
+    "image": "https://media.discordapp.net/attachments/928402314526617600/1242559358446080164/file-sKV9vB8Cv2tZjL0JlsGEi6Ud.png?ex=664e4714&is=664cf594&hm=fa94abbbfa6ca5a8938040df9bd95498d67042c2003541a43736e3fc258e6fc9&=&format=webp&quality=lossless&width=357&height=350",
+    "author": "Dani Domenech",
+    "timeToRead": "5 minutos",
+    "shortDescription": "Un grupo de aventureros encuentra refugio en una casona mientras descubre la disparidad de los campos cercanos.",
+    "related": [
+        {
+            "image": "https://www.fundacionisabelgemio.com/wp-content/uploads/2015/05/nouser.jpg",
+            "title": "Adda",
+            "subtitle": "Personaje",
+            "link": "https://hispania.vercel.app"
+        },
+        {
+            "image": "https://www.fundacionisabelgemio.com/wp-content/uploads/2015/05/nouser.jpg",
+            "title": "Charles",
+            "subtitle": "Personaje",
+            "link": "https://hispania.vercel.app"
+        },
+        {
+            "image": "https://www.fundacionisabelgemio.com/wp-content/uploads/2015/05/nouser.jpg",
+            "title": "Jack Daniels",
+            "subtitle": "Personaje",
+            "link": "https://hispania.vercel.app"
+        },
+        {
+            "image": "https://www.fundacionisabelgemio.com/wp-content/uploads/2015/05/nouser.jpg",
+            "title": "Ornn",
+            "subtitle": "Personaje",
+            "link": "https://hispania.vercel.app"
+        },
+        {
+            "image": "https://www.fundacionisabelgemio.com/wp-content/uploads/2015/05/nouser.jpg",
+            "title": "Jace",
+            "subtitle": "Personaje",
+            "link": "https://hispania.vercel.app"
+        }
+    ],
+    "sections": [
+        {
+            "id": "1",
+            "title": "Personajes",
+            "content": "{Adda} {Charles} {Jack} {Ornn} {Jace}",
+            "isNumbered": true
+        },
+        {
+            "id": "2",
+            "title": "Historia",
+            "subtitle": "Actualizado el 21/05/2024",
+            "content": "",
+            "isNumbered": true,
+            "subSections": [
+                {
+                    "id": "2.1",
+                    "title": "Encuentro en la casona",
+                    "content": "Los aventureros encuentran refugio en una casona mientras descubren la disparidad de los campos cercanos.",
+                    "isNumbered": true
+                }
+            ]
+        },
+        {
+            "id": "3",
+            "title": "Momentos Destacables",
+            "content": "Durante el encuentro, los aventureros observarán la extraña disparidad entre las granjas fértiles y las estériles, así como la curiosa torre recién construida.",
+            "isNumbered": true,
+            "subSections": [
+                {
+                    "id": "3.1",
+                    "title": "Observación de las granjas",
+                    "content": "Los aventureros notan la diferencia entre las granjas fértiles y las estériles, y deciden investigar la causa.",
+                    "isNumbered": true
+                }
+            ]
+        },
+        {
+            "id": "NotasDelDM",
+            "title": "Notas del DM",
+            "content": "Describe detalladamente la diferencia entre las granjas fértiles y las estériles para crear un ambiente intrigante. Usa descripciones de la lluvia y el frío para aumentar la tensión.",
+            "isNumbered": false
+        }
+    ],
+    "imports": [
+        {
+            "id": "Adda",
+            "link": "https://hispania.vercel.app",
+            "title": "Addaioth",
+            "subtitle": "Brisa",
+            "shortDesc": "Adda es una hechicera poderosa que tiene un familiar llamado Dellion",
+            "image": "https://www.fundacionisabelgemio.com/wp-content/uploads/2015/05/nouser.jpg"
+        },
+        {
+            "id": "Charles",
+            "link": "https://hispania.vercel.app",
+            "title": "Charles",
+            "subtitle": "Santi",
+            "shortDesc": "Charles es un dios que perdió sus poderes y tiene que recuperarlos",
+            "image": "https://www.fundacionisabelgemio.com/wp-content/uploads/2015/05/nouser.jpg"
+        },
+        {
+            "id": "Jack",
+            "link": "https://hispania.vercel.app",
+            "title": "Jack Daniels",
+            "subtitle": "Sergio",
+            "shortDesc": "Pícaro que trabajó en un grupo ahora roba y es un cabroncete feo",
+            "image": "https://www.fundacionisabelgemio.com/wp-content/uploads/2015/05/nouser.jpg"
+        },
+        {
+            "id": "Ornn",
+            "link": "https://hispania.vercel.app",
+            "title": "Ornn",
+            "subtitle": "Moru",
+            "shortDesc": "Un herrero que busca la gloria",
+            "image": "https://www.fundacionisabelgemio.com/wp-content/uploads/2015/05/nouser.jpg"
+        },
+        {
+            "id": "Jace",
+            "link": "https://hispania.vercel.app",
+            "title": "Jace",
+            "subtitle": "Jorge",
+            "shortDesc": "Arrasaron su pueblo, ahora busca venganza",
+            "image": "https://www.fundacionisabelgemio.com/wp-content/uploads/2015/05/nouser.jpg"
+        }
+    ]
+}
