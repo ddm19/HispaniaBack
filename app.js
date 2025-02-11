@@ -19,7 +19,7 @@ const port = 8080;
 
 app.use(bodyParser.json());
 
-// Bearer Token Middleware
+// Middleware para Bearer Token
 app.use((req, res, next) => {
     if (req.method === 'OPTIONS') return next();
 
@@ -54,7 +54,7 @@ const s3Client = new S3Client({
 
 const bucketName = process.env.S3_BUCKET_NAME;
 
-// Convert S3 stream to string
+// Función auxiliar para convertir un stream S3 a string
 const streamToString = (stream) => new Promise((resolve, reject) => {
     const chunks = [];
     stream.on('data', (chunk) => chunks.push(chunk));
@@ -62,7 +62,7 @@ const streamToString = (stream) => new Promise((resolve, reject) => {
     stream.on('end', () => resolve(Buffer.concat(chunks).toString('utf8')));
 });
 
-// GET: List all articles
+// GET: Listar todos los artículos
 app.get('/articles', async (req, res) => {
     try {
         const data = await s3Client.send(new ListObjectsV2Command({ Bucket: bucketName }));
@@ -71,7 +71,7 @@ app.get('/articles', async (req, res) => {
         const jsonFiles = data.Contents.filter(item => item.Key.endsWith('.json'));
         const articles = await Promise.all(jsonFiles.map(async file => {
             const fileData = await s3Client.send(new GetObjectCommand({ Bucket: bucketName, Key: file.Key }));
-            return { name: file.Key.replace('.json', ''), content: JSON.parse(await streamToString(fileData.Body)) };
+            return { id: file.Key.replace('.json', ''), content: JSON.parse(await streamToString(fileData.Body)) };
         }));
 
         res.json(articles);
@@ -81,7 +81,7 @@ app.get('/articles', async (req, res) => {
     }
 });
 
-// GET: Retrieve a specific article
+// GET: Obtener un artículo específico
 app.get('/articles/:id', async (req, res) => {
     const fileKey = `${req.params.id}.json`;
 
@@ -97,14 +97,20 @@ app.get('/articles/:id', async (req, res) => {
     }
 });
 
-// POST: Create a new article
-app.post('/articles/:name', async (req, res) => {
-    const fileKey = `${req.params.name}.json`;
+// POST: Crear un nuevo artículo
+app.post('/articles', async (req, res) => {
     const article = req.body;
+    
+    if (!article.title) {
+        return res.status(400).json({ error: 'Article title is required' });
+    }
+    
+    const fileKey = `${article.title}.json`;
 
     try {
+        // Verifica si ya existe un artículo con ese id
         await s3Client.send(new HeadObjectCommand({ Bucket: bucketName, Key: fileKey }));
-        return res.status(400).json({ error: `Article ${req.params.name} already exists` });
+        return res.status(400).json({ error: `Article with id ${article.title} already exists` });
     } catch (err) {
         if (err.name !== 'NotFound') {
             console.error(err);
@@ -113,11 +119,11 @@ app.post('/articles/:name', async (req, res) => {
     }
 
     try {
-        await s3Client.send(new PutObjectCommand({ 
-            Bucket: bucketName, 
-            Key: fileKey, 
-            Body: JSON.stringify(article, null, 2), 
-            ContentType: 'application/json' 
+        await s3Client.send(new PutObjectCommand({
+            Bucket: bucketName,
+            Key: fileKey,
+            Body: JSON.stringify(article, null, 2),
+            ContentType: 'application/json'
         }));
         res.status(201).json({ message: 'Article created successfully' });
     } catch (err) {
@@ -126,7 +132,7 @@ app.post('/articles/:name', async (req, res) => {
     }
 });
 
-// PUT: Update an existing article
+// PUT: Actualizar un artículo existente
 app.put('/articles/:id', async (req, res) => {
     const fileKey = `${req.params.id}.json`;
     const updatedArticle = req.body;
@@ -142,11 +148,11 @@ app.put('/articles/:id', async (req, res) => {
     }
 
     try {
-        await s3Client.send(new PutObjectCommand({ 
-            Bucket: bucketName, 
-            Key: fileKey, 
-            Body: JSON.stringify(updatedArticle, null, 2), 
-            ContentType: 'application/json' 
+        await s3Client.send(new PutObjectCommand({
+            Bucket: bucketName,
+            Key: fileKey,
+            Body: JSON.stringify(updatedArticle, null, 2),
+            ContentType: 'application/json'
         }));
         res.json({ message: 'Article updated successfully' });
     } catch (err) {
@@ -155,7 +161,7 @@ app.put('/articles/:id', async (req, res) => {
     }
 });
 
-// DELETE: Remove an article
+// DELETE: Eliminar un artículo
 app.delete('/articles/:id', async (req, res) => {
     const fileKey = `${req.params.id}.json`;
 
