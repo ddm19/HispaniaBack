@@ -1,15 +1,16 @@
 const express = require('express');
 const bodyParser = require('body-parser');
 const cors = require('cors');
-const { 
-    S3Client, 
-    ListObjectsV2Command, 
-    GetObjectCommand, 
-    PutObjectCommand, 
-    HeadObjectCommand, 
-    DeleteObjectCommand 
+const {
+    S3Client,
+    ListObjectsV2Command,
+    GetObjectCommand,
+    PutObjectCommand,
+    HeadObjectCommand,
+    DeleteObjectCommand
 } = require('@aws-sdk/client-s3');
 const dotenv = require('dotenv');
+const { getSignedUrl } = require('@aws-sdk/s3-request-presigner');
 const { Readable } = require('stream');
 
 dotenv.config();
@@ -17,7 +18,8 @@ dotenv.config();
 const app = express();
 const port = 8080;
 
-app.use(bodyParser.json());
+app.use(bodyParser.json({ limit: '100mb' }));
+app.use(bodyParser.urlencoded({ extended: true, limit: '100mb' }));
 
 // Middleware para Bearer Token
 app.use((req, res, next) => {
@@ -100,11 +102,11 @@ app.get('/articles/:id', async (req, res) => {
 // POST: Crear un nuevo artículo
 app.post('/articles', async (req, res) => {
     const article = req.body;
-    
+
     if (!article.title) {
         return res.status(400).json({ error: 'Article title is required' });
     }
-    
+
     const fileKey = `${article.title}.json`;
 
     try {
@@ -183,6 +185,69 @@ app.delete('/articles/:id', async (req, res) => {
         res.status(500).json({ error: 'Error deleting article from S3' });
     }
 });
+
+// POST: Subir SVGs de cartas bajo un título (nombre del mazo)
+app.get('/cards', async (req, res) => {
+    try {
+        const data = await s3Client.send(
+            new ListObjectsV2Command({ Bucket: bucketName })
+        );
+
+        if (!data.Contents) return res.json([]);
+
+        const svgKeys = data.Contents
+            .filter((obj) => obj.Key.endsWith('.svg'))
+            .map((obj) => obj.Key);
+
+        const decksMap = {};
+
+        await Promise.all(
+            svgKeys.map(async (key) => {
+                const [title, file] = key.split('/');
+                if (!title || !file) return;
+
+                const name = file.replace(/\.svg$/i, '');
+
+
+                const signedUrl = await getSignedUrl(
+                    s3Client,
+                    new GetObjectCommand({ Bucket: bucketName, Key: key }),
+                    { expiresIn: 86_400 } // 24 h
+                );
+
+                (decksMap[title] ||= []).push({ name, url: signedUrl });
+            })
+        );
+
+        const decks = Object.entries(decksMap).map(([title, cards]) => ({
+            title,
+            cards,
+        }));
+
+        res.json(decks);
+    } catch (err) {
+        console.error('Error listando cartas:', err);
+        res.status(500).json({ error: 'Error al listar cartas' });
+    }
+});
+
+app.get('/cards/:title', async (req, res) => {
+    const prefix = `${req.params.title}/`;
+
+    try {
+        const data = await s3Client.send(
+            new ListObjectsV2Command({ Bucket: bucketName, Prefix: prefix })
+        );
+
+        const files = data.Contents?.map((obj) => obj.Key) || [];
+        res.json({ files });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: 'Error listing cards' });
+    }
+});
+
+
 
 app.listen(port, () => {
     console.log(`Server is running on port ${port}`);
