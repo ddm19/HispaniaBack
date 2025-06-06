@@ -7,7 +7,8 @@ const {
     GetObjectCommand,
     PutObjectCommand,
     HeadObjectCommand,
-    DeleteObjectCommand
+    DeleteObjectCommand,
+    DeleteObjectsCommand
 } = require('@aws-sdk/client-s3');
 const dotenv = require('dotenv');
 const { getSignedUrl } = require('@aws-sdk/s3-request-presigner');
@@ -186,6 +187,12 @@ app.delete('/articles/:id', async (req, res) => {
     }
 });
 
+//---------------- CARDS
+
+function isCardKey(key = '') {
+    return key.toLowerCase().endsWith('.svg') || key.toLowerCase().endsWith('.png');
+}
+
 // POST: Subir SVGs de cartas bajo un título (nombre del mazo)
 app.get('/cards', async (req, res) => {
     try {
@@ -195,14 +202,14 @@ app.get('/cards', async (req, res) => {
 
         if (!data.Contents) return res.json([]);
 
-        const svgKeys = data.Contents
-            .filter((obj) => obj.Key.endsWith('.svg'))
+        const cardKeys = data.Contents
+            .filter((obj) => isCardKey(obj.Key))
             .map((obj) => obj.Key);
 
         const decksMap = {};
 
         await Promise.all(
-            svgKeys.map(async (key) => {
+            cardKeys.map(async (key) => {
                 const [title, file] = key.split('/');
                 if (!title || !file) return;
 
@@ -239,7 +246,9 @@ app.get('/cards/:title', async (req, res) => {
             new ListObjectsV2Command({ Bucket: bucketName, Prefix: prefix })
         );
 
-        const files = data.Contents?.map((obj) => obj.Key) || [];
+        const files = (data.Contents || [])
+            .filter((obj) => isCardKey(obj.Key))
+            .map((obj) => obj.Key);
         res.json({ files });
     } catch (err) {
         console.error(err);
@@ -247,6 +256,135 @@ app.get('/cards/:title', async (req, res) => {
     }
 });
 
+// DELETE: Cards
+async function listCardKeys(prefix = '') {
+    let ContinuationToken;
+    const keys = [];
+
+    do {
+        const { Contents, IsTruncated, NextContinuationToken } =
+            await s3Client.send(
+                new ListObjectsV2Command({
+                    Bucket: bucketName,
+                    Prefix: prefix,
+                    ContinuationToken,
+                })
+            );
+
+        (Contents || [])
+            .filter((obj) => isCardKey(obj.Key))
+            .forEach((obj) => keys.push(obj.Key));
+
+        ContinuationToken = IsTruncated ? NextContinuationToken : undefined;
+    } while (ContinuationToken);
+
+    return keys;
+}
+
+/** Borra un array de claves S3 (en lotes de 1000 máx.) */
+async function deleteKeys(keys = []) {
+    const chunked = [];
+    for (let i = 0; i < keys.length; i += 1000) {
+        chunked.push(keys.slice(i, i + 1000));
+    }
+
+    await Promise.all(
+        chunked.map((batch) =>
+            s3Client.send(
+                new DeleteObjectsCommand({
+                    Bucket: bucketName,
+                    Delete: {
+                        Objects: batch.map((Key) => ({ Key })),
+                        Quiet: true,
+                    },
+                })
+            )
+        )
+    );
+    return keys.length;
+}
+
+/* Borra TODAS las cartas (svg) de un mazo concreto */
+app.delete('/cards/:title', async (req, res) => {
+    const { title } = req.params;
+    const prefix = `${title}/`; // carpeta
+
+    try {
+        const keys = await listCardKeys(prefix);
+        if (keys.length === 0) {
+            return res
+                .status(404)
+                .json({ error: `No se encontraron cartas para el mazo "${title}"` });
+        }
+
+        const deleted = await deleteKeys(keys);
+        res.json({
+            message: `Mazo "${title}" eliminado (${deleted} cartas)`,
+        });
+    } catch (err) {
+        console.error('Error deleting deck:', err);
+        res.status(500).json({ error: 'Error eliminando el mazo' });
+    }
+});
+
+/* Borra TODAS las cartas de TODOS los mazos */
+app.delete('/cards', async (_req, res) => {
+    try {
+        const keys = await listCardKeys();
+        if (keys.length === 0) {
+            return res.status(404).json({ error: 'No hay cartas para eliminar' });
+        }
+
+        const deleted = await deleteKeys(keys);
+        res.json({ message: `Eliminadas ${deleted} cartas en total` });
+    } catch (err) {
+        console.error('Error deleting all decks:', err);
+        res.status(500).json({ error: 'Error eliminando todas las cartas' });
+    }
+});
+
+app.post('/cards', async (req, res) => {
+    const { title, cards } = req.body;
+
+    if (!title || !Array.isArray(cards)) {
+        return res.status(400).json({ error: 'Se requiere un título y un array de cartas' });
+    }
+
+    try {
+        await Promise.all(
+            cards.map(async (card, idx) => {
+                const { name, svgBase64, pngBase64 } = card;
+
+                // base64 de la imagen (uno u otro campo)
+                const base64 = svgBase64 || pngBase64;
+                if (!name || !base64) {
+                    throw new Error(`Falta nombre o imagen en el índice ${idx}`);
+                }
+
+                /* Determinamos extensión y MIME */
+                const isPng = !!pngBase64;
+                const ext = isPng ? 'png' : 'svg';
+                const type = isPng ? 'image/png' : 'image/svg+xml';
+
+                const key = `${title}/${name}.${ext}`;
+
+                await s3Client.send(
+                    new PutObjectCommand({
+                        Bucket: bucketName,
+                        Key: key,
+                        Body: Buffer.from(base64, 'base64'),
+                        ContentType: type,
+                    })
+                );
+            })
+        );
+
+        res.status(201).json({ message: `Cartas subidas a /${title}/` });
+    } catch (err) {
+        console.error('Error al subir cartas:', err);
+        res.status(500).json({ error: 'Error al subir las cartas' });
+    }
+});
 
 
 app.listen(port, () => {
