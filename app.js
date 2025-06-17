@@ -11,8 +11,6 @@ const {
     DeleteObjectsCommand
 } = require('@aws-sdk/client-s3');
 const dotenv = require('dotenv');
-const { getSignedUrl } = require('@aws-sdk/s3-request-presigner');
-const { Readable } = require('stream');
 
 dotenv.config();
 
@@ -215,14 +213,9 @@ app.get('/cards', async (req, res) => {
 
                 const name = file.replace(/\.svg$/i, '');
 
+                const unsignedUrl = `https://${bucketName}.s3.${process.env.AWS_REGION}.amazonaws.com/${key}`;
 
-                const signedUrl = await getSignedUrl(
-                    s3Client,
-                    new GetObjectCommand({ Bucket: bucketName, Key: key }),
-                    { expiresIn: 86_400 } // 24 h
-                );
-
-                (decksMap[title] ||= []).push({ name, url: signedUrl });
+                (decksMap[title] ||= []).push({ name, url: unsignedUrl });
             })
         );
 
@@ -374,6 +367,7 @@ app.post('/cards', async (req, res) => {
                         Key: key,
                         Body: Buffer.from(base64, 'base64'),
                         ContentType: type,
+                        ACL: 'public-read',
                     })
                 );
             })
