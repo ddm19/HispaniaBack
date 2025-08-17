@@ -78,7 +78,7 @@ app.get('/articles', async (req, res) => {
             return { id: file.Key.replace('.json', ''), content: parsed.article || parsed };
         }));
 
-        res.json(articles.article);
+        res.json(articles);
     } catch (err) {
         console.error(err);
         res.status(500).json({ error: 'Error fetching articles from S3' });
@@ -92,9 +92,10 @@ app.get('/articles/:id', async (req, res) => {
 
     try {
         const data = await s3Client.send(new GetObjectCommand({ Bucket: bucketName, Key: fileKey }));
-        res.json(JSON.parse(await streamToString(data.Body)));
+        const parsed = JSON.parse(await streamToString(data.Body));
+        return res.json(parsed.article || parsed);
     } catch (err) {
-        if (err.name === 'NoSuchKey') {
+        if (err.name === 'NoSuchKey' || err.name === 'NotFound') {
             return res.status(404).json({ error: `Article with ID ${req.params.id} not found` });
         }
         console.error(err);
@@ -200,15 +201,23 @@ app.put('/articles/:id', async (req, res) => {
 // DELETE: Eliminar un artículo
 app.delete('/articles/:id', async (req, res) => {
     const fileKey = `${req.params.id}.json`;
+    const { password } = req.body || {};
+
+    if (!password) {
+        return res.status(400).json({ error: 'Password is required' });
+    }
 
     try {
-        await s3Client.send(new HeadObjectCommand({ Bucket: bucketName, Key: fileKey }));
+        const { Body } = await s3Client.send(new GetObjectCommand({ Bucket: bucketName, Key: fileKey }));
+        const existing = JSON.parse(await Body.transformToString());
+        const valid = await bcrypt.compare(password, existing.passwordHash);
+        if (!valid) return res.status(403).json({ error: 'Invalid password' });
     } catch (err) {
-        if (err.name === 'NotFound') {
+        if (err.name === 'NoSuchKey' || err.name === 'NotFound') {
             return res.status(404).json({ error: `Article with ID ${req.params.id} not found` });
         }
         console.error(err);
-        return res.status(500).json({ error: 'Error checking article existence in S3' });
+        return res.status(500).json({ error: 'Error checking article in S3' });
     }
 
     try {
