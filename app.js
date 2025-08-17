@@ -242,6 +242,44 @@ app.delete('/articles/:id', async (req, res) => {
     }
 });
 
+//---------------- CATEGORIES
+app.post('/categories', async (req, res) => {
+    const { id, name } = req.body;
+    if (!id || !name) {
+        return res.status(400).json({ error: 'Se requiere id y nombre' });
+    }
+
+    try {
+        await s3Client.send(new PutObjectCommand({
+            Bucket: bucketName,
+            Key: `categories/${id}.json`,
+            Body: JSON.stringify({ id, name }, null, 2),
+            ContentType: 'application/json'
+        }));
+        res.status(201).json({ message: 'Categoría creada correctamente' });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: 'Error creando la categoría en S3' });
+    }
+});
+app.get('/categories', async (req, res) => {
+    try {
+        const data = await s3Client.send(
+            new ListObjectsV2Command({ Bucket: bucketName, Prefix: 'categories/' })
+        );
+
+        const categories = (data.Contents || []).map((obj) => {
+            const keyParts = obj.Key.split('/');
+            const id = keyParts[1]?.replace('.json', '');
+            return { id, ...JSON.parse(obj.Body) };
+        });
+
+        res.json(categories);
+    } catch (err) {
+        console.error('Error listando categorías:', err);
+        res.status(500).json({ error: 'Error al listar categorías' });
+    }
+});
 
 //---------------- CARDS
 
