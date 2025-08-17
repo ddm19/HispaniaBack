@@ -105,13 +105,18 @@ app.get('/articles/:id', async (req, res) => {
 
 // POST: Crear un nuevo artículo
 app.post('/articles', async (req, res) => {
-    const { articleJSON, password } = req.body || {};
+    const { articleJSON } = req.body || {};
+    const rawPassword = req.body?.password;
 
     if (!articleJSON || !articleJSON.title) {
         return res.status(400).json({ error: 'Article title is required' });
     }
+    if (rawPassword === undefined || rawPassword === null) {
+        return res.status(400).json({ error: 'A valid password (min 4 chars) is required' });
+    }
 
-    if (!password || typeof password !== 'string' || password.trim().length < 4) {
+    const password = String(rawPassword);
+    if (password.trim().length < 4) {
         return res.status(400).json({ error: 'A valid password (min 4 chars) is required' });
     }
 
@@ -152,11 +157,13 @@ app.post('/articles', async (req, res) => {
 
 app.put('/articles/:id', async (req, res) => {
     const fileKey = `${req.params.id}.json`;
-    const { articleJSON, password } = req.body || {};
+    const rawPassword = req.body?.password;
 
-    if (!password) {
+    if (rawPassword === undefined || rawPassword === null) {
         return res.status(400).json({ error: 'Password is required' });
     }
+
+    const password = String(rawPassword);
 
     try {
         const { Body } = await s3Client.send(
@@ -164,33 +171,31 @@ app.put('/articles/:id', async (req, res) => {
         );
         const existing = JSON.parse(await Body.transformToString());
 
-        const valid = await bcrypt.compare(password, existing.passwordHash);
-        if (!valid) {
-            return res.status(403).json({ error: 'Invalid password' });
+        if (!existing.passwordHash || typeof existing.passwordHash !== 'string') {
+            return res.status(409).json({ error: 'Article was created without a password. Please migrate it first.' });
         }
+
+        const ok = await bcrypt.compare(password, existing.passwordHash);
+        if (!ok) return res.status(403).json({ error: 'Invalid password' });
 
         const updatedPayload = {
             ...existing,
-            article: articleJSON || existing.article,
+            article: req.body?.articleJSON || existing.article,
             updatedAt: new Date().toISOString(),
             version: (existing.version || 1) + 1
         };
 
-        await s3Client.send(
-            new PutObjectCommand({
-                Bucket: bucketName,
-                Key: fileKey,
-                Body: JSON.stringify(updatedPayload, null, 2),
-                ContentType: 'application/json'
-            })
-        );
+        await s3Client.send(new PutObjectCommand({
+            Bucket: bucketName,
+            Key: fileKey,
+            Body: JSON.stringify(updatedPayload, null, 2),
+            ContentType: 'application/json'
+        }));
 
         res.json({ message: 'Article updated successfully' });
     } catch (err) {
         if (err.name === 'NoSuchKey' || err.name === 'NotFound') {
-            return res
-                .status(404)
-                .json({ error: `Article with ID ${req.params.id} not found` });
+            return res.status(404).json({ error: `Article with ID ${req.params.id} not found` });
         }
         console.error(err);
         res.status(500).json({ error: 'Error updating article in S3' });
@@ -198,20 +203,28 @@ app.put('/articles/:id', async (req, res) => {
 });
 
 
+
 // DELETE: Eliminar un artículo
 app.delete('/articles/:id', async (req, res) => {
     const fileKey = `${req.params.id}.json`;
-    const { password } = req.body || {};
+    const rawPassword = req.body?.password;
 
-    if (!password) {
+    if (rawPassword === undefined || rawPassword === null) {
         return res.status(400).json({ error: 'Password is required' });
     }
+
+    const password = String(rawPassword);
 
     try {
         const { Body } = await s3Client.send(new GetObjectCommand({ Bucket: bucketName, Key: fileKey }));
         const existing = JSON.parse(await Body.transformToString());
-        const valid = await bcrypt.compare(password, existing.passwordHash);
-        if (!valid) return res.status(403).json({ error: 'Invalid password' });
+
+        if (!existing.passwordHash || typeof existing.passwordHash !== 'string') {
+            return res.status(409).json({ error: 'Article was created without a password. Please migrate it first.' });
+        }
+
+        const ok = await bcrypt.compare(password, existing.passwordHash);
+        if (!ok) return res.status(403).json({ error: 'Invalid password' });
     } catch (err) {
         if (err.name === 'NoSuchKey' || err.name === 'NotFound') {
             return res.status(404).json({ error: `Article with ID ${req.params.id} not found` });
@@ -228,6 +241,7 @@ app.delete('/articles/:id', async (req, res) => {
         res.status(500).json({ error: 'Error deleting article from S3' });
     }
 });
+
 
 //---------------- CARDS
 
