@@ -69,9 +69,13 @@ const streamToString = (stream) => new Promise((resolve, reject) => {
 app.get('/articles', async (req, res) => {
     try {
         const data = await s3Client.send(new ListObjectsV2Command({ Bucket: bucketName }));
+
         if (!data.Contents) return res.status(404).json({ error: 'No se encontraron artículos' });
 
-        const jsonFiles = data.Contents.filter(item => item.Key.endsWith('.json'));
+        // Solo artículos en la raíz (excluye categorías y otras carpetas)
+        const jsonFiles = data.Contents.filter(item => (
+            item.Key.toLowerCase().endsWith('.json') && !item.Key.includes('/') && !item.Key.startsWith('categories/')
+        ));
         const articles = await Promise.all(jsonFiles.map(async file => {
             const fileData = await s3Client.send(new GetObjectCommand({ Bucket: bucketName, Key: file.Key }));
             const parsed = JSON.parse(await streamToString(fileData.Body));
@@ -264,15 +268,18 @@ app.post('/categories', async (req, res) => {
 });
 app.get('/categories', async (req, res) => {
     try {
-        const data = await s3Client.send(
-            new ListObjectsV2Command({ Bucket: bucketName, Prefix: 'categories/' })
-        );
+        const prefix = 'categories/';
+        const data = await s3Client.send(new ListObjectsV2Command({ Bucket: bucketName, Prefix: prefix }));
 
-        const categories = (data.Contents || []).map((obj) => {
-            const keyParts = obj.Key.split('/');
-            const id = keyParts[1]?.replace('.json', '');
-            return { id, ...JSON.parse(obj.Body) };
-        });
+        const jsonFiles = (data.Contents || []).filter((obj) => obj.Key.toLowerCase().endsWith('.json'));
+
+        const categories = await Promise.all(
+            jsonFiles.map(async (obj) => {
+                const file = await s3Client.send(new GetObjectCommand({ Bucket: bucketName, Key: obj.Key }));
+                const parsed = JSON.parse(await streamToString(file.Body));
+                return parsed;
+            })
+        );
 
         res.json(categories);
     } catch (err) {
