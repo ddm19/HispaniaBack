@@ -1,5 +1,7 @@
 const express = require('express');
 const bodyParser = require('body-parser');
+const bcrypt = require('bcryptjs');
+
 const cors = require('cors');
 const {
     S3Client,
@@ -72,15 +74,17 @@ app.get('/articles', async (req, res) => {
         const jsonFiles = data.Contents.filter(item => item.Key.endsWith('.json'));
         const articles = await Promise.all(jsonFiles.map(async file => {
             const fileData = await s3Client.send(new GetObjectCommand({ Bucket: bucketName, Key: file.Key }));
-            return { id: file.Key.replace('.json', ''), content: JSON.parse(await streamToString(fileData.Body)) };
+            const parsed = JSON.parse(await streamToString(fileData.Body));
+            return { id: file.Key.replace('.json', ''), content: parsed.article || parsed };
         }));
 
-        res.json(articles);
+        res.json(articles.article);
     } catch (err) {
         console.error(err);
         res.status(500).json({ error: 'Error fetching articles from S3' });
     }
 });
+
 
 // GET: Obtener un artículo específico
 app.get('/articles/:id', async (req, res) => {
@@ -100,18 +104,21 @@ app.get('/articles/:id', async (req, res) => {
 
 // POST: Crear un nuevo artículo
 app.post('/articles', async (req, res) => {
-    const article = req.body;
+    const { articleJSON, password } = req.body || {};
 
-    if (!article.title) {
+    if (!articleJSON || !articleJSON.title) {
         return res.status(400).json({ error: 'Article title is required' });
     }
 
-    const fileKey = `${article.title}.json`;
+    if (!password || typeof password !== 'string' || password.trim().length < 4) {
+        return res.status(400).json({ error: 'A valid password (min 4 chars) is required' });
+    }
+
+    const fileKey = `${articleJSON.title}.json`;
 
     try {
-        // Verifica si ya existe un artículo con ese id
         await s3Client.send(new HeadObjectCommand({ Bucket: bucketName, Key: fileKey }));
-        return res.status(400).json({ error: `Article with id ${article.title} already exists` });
+        return res.status(400).json({ error: `Article with id ${articleJSON.title} already exists` });
     } catch (err) {
         if (err.name !== 'NotFound') {
             console.error(err);
@@ -120,12 +127,19 @@ app.post('/articles', async (req, res) => {
     }
 
     try {
+        const passwordHash = await bcrypt.hash(password, 12);
+        const storedPayload = {
+            article: articleJSON,
+            passwordHash,
+        };
+
         await s3Client.send(new PutObjectCommand({
             Bucket: bucketName,
             Key: fileKey,
-            Body: JSON.stringify(article, null, 2),
+            Body: JSON.stringify(storedPayload, null, 2),
             ContentType: 'application/json'
         }));
+
         res.status(201).json({ message: 'Article created successfully' });
     } catch (err) {
         console.error(err);
@@ -134,33 +148,54 @@ app.post('/articles', async (req, res) => {
 });
 
 // PUT: Actualizar un artículo existente
+
 app.put('/articles/:id', async (req, res) => {
     const fileKey = `${req.params.id}.json`;
-    const updatedArticle = req.body;
+    const { articleJSON, password } = req.body || {};
 
-    try {
-        await s3Client.send(new HeadObjectCommand({ Bucket: bucketName, Key: fileKey }));
-    } catch (err) {
-        if (err.name === 'NotFound') {
-            return res.status(404).json({ error: `Article with ID ${req.params.id} not found` });
-        }
-        console.error(err);
-        return res.status(500).json({ error: 'Error checking article existence in S3' });
+    if (!password) {
+        return res.status(400).json({ error: 'Password is required' });
     }
 
     try {
-        await s3Client.send(new PutObjectCommand({
-            Bucket: bucketName,
-            Key: fileKey,
-            Body: JSON.stringify(updatedArticle, null, 2),
-            ContentType: 'application/json'
-        }));
+        const { Body } = await s3Client.send(
+            new GetObjectCommand({ Bucket: bucketName, Key: fileKey })
+        );
+        const existing = JSON.parse(await Body.transformToString());
+
+        const valid = await bcrypt.compare(password, existing.passwordHash);
+        if (!valid) {
+            return res.status(403).json({ error: 'Invalid password' });
+        }
+
+        const updatedPayload = {
+            ...existing,
+            article: articleJSON || existing.article,
+            updatedAt: new Date().toISOString(),
+            version: (existing.version || 1) + 1
+        };
+
+        await s3Client.send(
+            new PutObjectCommand({
+                Bucket: bucketName,
+                Key: fileKey,
+                Body: JSON.stringify(updatedPayload, null, 2),
+                ContentType: 'application/json'
+            })
+        );
+
         res.json({ message: 'Article updated successfully' });
     } catch (err) {
+        if (err.name === 'NoSuchKey' || err.name === 'NotFound') {
+            return res
+                .status(404)
+                .json({ error: `Article with ID ${req.params.id} not found` });
+        }
         console.error(err);
         res.status(500).json({ error: 'Error updating article in S3' });
     }
 });
+
 
 // DELETE: Eliminar un artículo
 app.delete('/articles/:id', async (req, res) => {
@@ -367,7 +402,6 @@ app.post('/cards', async (req, res) => {
                         Key: key,
                         Body: Buffer.from(base64, 'base64'),
                         ContentType: type,
-                        ACL: 'public-read',
                     })
                 );
             })
